@@ -1,0 +1,37 @@
+services:
+  catalog-api:
+    build:
+      context: ./src/Catalog.API
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - partshub
+
+  orders-api:
+    build:
+      context: ./src/Orders.API
+      dockerfile: Dockerfile
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      # How Orders.API locates Catalog.API inside the compose network.
+      - CatalogApi__BaseUrl=http://catalog-api:8080
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    networks:
+      - partshub
+
+networks:
+  partshub:
+    driver: bridge
